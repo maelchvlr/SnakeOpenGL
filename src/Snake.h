@@ -1,21 +1,29 @@
-#ifndef SNAKE_H
-#define SNAKE_H
+#pragma once
+#include <vector>
+#include "Grid.h"
+#include "glm.hpp"
+#include <queue>
 
-#include <glm.hpp>
+enum class Direction { UP, DOWN, LEFT, RIGHT };
+
+struct Position {
+    Position(float x, float z) : x(x), z(z) {}
+    float x, z;
+    float y = 0.5; // Default y position for the snake
+    glm::vec3 toVec3() { return glm::vec3(x, y, z); }
+};
 
 class Snake {
 public:
-    Snake(const glm::vec3& startPosition);
-
-    void update(float deltatime);
-    glm::vec3 getPosition() const;
+    Snake(Grid& InGrid, Position pos);
+    void move(Direction direction);
+    void grow();
+    void updateGrid();
+    std::vector<Position>& getBody() { return body; }
 
 private:
-    glm::vec3 position;
-    glm::vec3 direction;
-    float speed;
-
-    // Additional attributes like direction, speed, etc., can be added here.
+    Grid& grid;
+    std::vector<Position> body;
+    std::vector<std::queue<Position>> positionQueues;
+    Direction currentDirection;
 };
-
-#endif // SNAKE_H

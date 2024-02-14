@@ -11,6 +11,7 @@ public:
 
     CellContent getCellContent(int x, int y) const;
     void setCellContent(int x, int y, CellContent content);
+    void placePill();
     int getWidth() const { return width; }
     int getHeight() const { return height; }
 

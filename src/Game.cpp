@@ -18,7 +18,7 @@ Game* Game::gameInstance = nullptr;
 // Game constructor
 Game::Game()
     : window(nullptr), VAO(0), VBO(0), shaderProgram(0),
-    snake(glm::vec3(0.0f, 0.5f, 0.0f)),
+    snake(grid, Position(0.5f,0.5f)),
     grid(20, 20) { // Initializes the game with a window, a snake at origin, and a 20x20 grid
 
     gameInstance = this; // Sets the static instance pointer to this instance
@@ -26,7 +26,7 @@ Game::Game()
     shaderProgram = loadShader("shaders/VertexShader.glsl", "shaders/FragmentShader.glsl"); // Load and compile shaders
     setupGrid(); // Setup grid geometry
     setupCube(); // Setup cube geometry (used for obstacles and snake)
-    placePill(); // Place a pill on the grid
+    grid.setCellContent(12, 10, CellContent::Pill);
 }
 
 // Game destructor for cleanup
@@ -185,7 +185,8 @@ void Game::run() {
         float deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        snake.update(deltaTime);
+        snake.move(Direction::RIGHT);
+        //snake.updateGrid();
         update();
         render();
 
@@ -222,17 +223,18 @@ void Game::render() {
 
     glm::mat4 gridModel = glm::mat4(1.0f);  // Grid model matrix (identity matrix for no transformation)
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(gridModel));
-    glBindVertexArray(gridVAO);
+    glBindVertexArray(gridVAO); 
     glDrawArrays(GL_LINES, 0, (gridSize * 2 + 1) * 4);
     glBindVertexArray(0);
 
     // Render the snake
     glUniform3f(glGetUniformLocation(shaderProgram, "color"), 0.0f, 1.0f, 0.0f); // Set color to green for snake
-    glm::mat4 snakeModel = glm::translate(glm::mat4(1.0f), snake.getPosition());  // Snake model matrix
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(snakeModel));
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36); // Render the cube (snake)
-    glBindVertexArray(0);
+    for (auto& pos : snake.getBody()) {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), pos.toVec3());
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
 
     // Render the obstacles and pills
     float cellSize = 1.0f; // Size of each cell in the grid
@@ -273,6 +275,21 @@ void Game::render() {
 				glBindVertexArray(VAO);
 				glDrawArrays(GL_TRIANGLES, 0, 36);
 			}
+            if (grid.getCellContent(x, y) == CellContent::Snake) {
+                				glUniform3f(glGetUniformLocation(shaderProgram, "color"), 0.5f, 1.0f, 0.5f); // Set color to ? for snake dbug
+				// Calculate world position with center offset
+                                glm::vec3 worldPos = glm::vec3(
+					(x - grid.getWidth() / 2.0f) * cellSize + offsetX,
+					offsetY,
+					(y - grid.getHeight() / 2.0f) * cellSize + offsetZ
+				);
+
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
+				glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+				glBindVertexArray(VAO);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			
+            }
         }
     }
 
@@ -386,7 +403,6 @@ void Game::toggleObstacleAt(int gridX, int gridY) {
 void Game::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     // Check if the left mouse button was pressed
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        std::cout << "Mouse button pressed\n"; // Log the event
 
         // Get the current mouse position
         double xpos, ypos;
@@ -404,11 +420,5 @@ void Game::mouseButtonCallback(GLFWwindow* window, int button, int action, int m
 }
 
 void Game::placePill() {
-    srand(time(nullptr)); // Seed for random number generation
-    int x, y;
-    do {
-        x = rand() % grid.getWidth();
-        y = rand() % grid.getHeight();
-    } while (grid.getCellContent(x, y) != CellContent::Empty);
-    grid.setCellContent(x, y, CellContent::Pill);
+    grid.placePill();
 }
