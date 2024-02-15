@@ -18,15 +18,13 @@ Game* Game::gameInstance = nullptr;
 // Game constructor
 Game::Game()
     : window(nullptr), VAO(0), VBO(0), shaderProgram(0),
-    snake(grid, Position(0.5f,0.5f)),
-    grid(20, 20) { // Initializes the game with a window, a snake at origin, and a 20x20 grid
+    grid(20, 20), snake(grid, Position(0.5f, 0.5f)) { // Initializes the game with a window, a snake at origin, and a 20x20 grid
 
     gameInstance = this; // Sets the static instance pointer to this instance
     init(); // Initialize GLFW and GLEW, create window
     shaderProgram = loadShader("shaders/VertexShader.glsl", "shaders/FragmentShader.glsl"); // Load and compile shaders
     setupGrid(); // Setup grid geometry
     setupCube(); // Setup cube geometry (used for obstacles and snake)
-    grid.setCellContent(12, 10, CellContent::Pill);
 }
 
 // Game destructor for cleanup
@@ -185,7 +183,7 @@ void Game::run() {
         float deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        snake.move(Direction::RIGHT);
+        snake.calculateAndFollowPath();
         //snake.updateGrid();
         update();
         render();
@@ -275,21 +273,7 @@ void Game::render() {
 				glBindVertexArray(VAO);
 				glDrawArrays(GL_TRIANGLES, 0, 36);
 			}
-            if (grid.getCellContent(x, y) == CellContent::Snake) {
-                				glUniform3f(glGetUniformLocation(shaderProgram, "color"), 0.5f, 1.0f, 0.5f); // Set color to ? for snake dbug
-				// Calculate world position with center offset
-                                glm::vec3 worldPos = glm::vec3(
-					(x - grid.getWidth() / 2.0f) * cellSize + offsetX,
-					offsetY,
-					(y - grid.getHeight() / 2.0f) * cellSize + offsetZ
-				);
-
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
-				glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-				glBindVertexArray(VAO);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
 			
-            }
         }
     }
 
@@ -389,9 +373,13 @@ void Game::toggleObstacleAt(int gridX, int gridY) {
 			grid.setCellContent(gridX, gridY, CellContent::Obstacle);
 			placePill();
 		}
+        else if (content == CellContent::Snake) {
+            snake.GameOver();
+		}
         else {
             grid.setCellContent(gridX, gridY, CellContent::Obstacle);
         }
+        snake.calculateAndFollowPath();
     }
     else {
         // Log an error if the coordinates are out of bounds

@@ -1,7 +1,8 @@
 #include "Snake.h"
+#include "Grid.h"
 #include <iostream>
 
-Snake::Snake(Grid& InGrid, Position pos) : currentDirection(Direction::RIGHT), grid(InGrid) {
+Snake::Snake(Grid& InGrid, Position pos) : grid(InGrid) {
 	// Initialize the snake with a default position
     body.push_back(pos); // Example: Start at position (0, 0)
     positionQueues.push_back(std::queue<Position>());
@@ -13,6 +14,8 @@ Snake::Snake(Grid& InGrid, Position pos) : currentDirection(Direction::RIGHT), g
 
 	// Update the grid with the initial snake position
 	grid.setCellContent(0, 0, CellContent::Snake);
+
+    currentDirection = Direction::DOWN; // Example: Start moving up
 }
 
 void Snake::move(Direction direction) {
@@ -69,19 +72,80 @@ void Snake::updateGrid() {
 		}
 	}
 
-    if (grid.getCellContent(body.front().x + 10, body.front().z + 10) == CellContent::Pill)
+    switch (currentDirection) {
+        case Direction::UP:    offSetCorrection.z = -0.02; break;
+        case Direction::DOWN:  offSetCorrection.z = -0.98; break;
+        case Direction::LEFT:  offSetCorrection.x = -0.02; break;
+        case Direction::RIGHT: offSetCorrection.x = -0.98; break;
+    }
+
+    if (grid.getCellContent(round(body.front().x + 10 + offSetCorrection.x), round(body.front().z + 10 + offSetCorrection.z)) == CellContent::Pill)
     {
         grow();
 	}
 
-    if (grid.getCellContent(body.front().x + 10, body.front().z + 10) == CellContent::Obstacle)
+    if (grid.getCellContent(round(body.front().x + 10 + offSetCorrection.x), round(body.front().z + 10 + offSetCorrection.z)) == CellContent::Obstacle)
     {
         std::cout << "Game Over" << std::endl;
 	}
 
     for (auto& segment : body) {
-		grid.setCellContent(segment.x + 10, segment.z + 10, CellContent::Snake);
+		grid.setCellContent(round(segment.x + 10 + offSetCorrection.x), round(segment.z + 10 + offSetCorrection.z), CellContent::Snake);
 	}
 
     
 }
+
+void Snake::calculateAndFollowPath() {
+    if (gameOver) return;
+    Position pillPosition = grid.getPillPosition(); 
+
+    Grid::Node* startNode = grid.getNode(round(body.front().x + 10 + offSetCorrection.x), round(body.front().z + 10 + offSetCorrection.z)); // Convert Position to grid coordinates as needed
+    
+    Grid::Node* goalNode = grid.getNode(pillPosition.x, pillPosition.z);
+
+    auto pathNodes = grid.findPath(*startNode, *goalNode);
+    currentPath.clear();
+    for (auto node : pathNodes) {
+        currentPath.push_back(Position(node->x, node->y)); // Convert grid coordinates back to Position
+    }
+
+    followPath();
+}
+
+void Snake::GameOver()
+{
+    gameOver = true;
+}
+
+
+void Snake::followPath() {
+    if (!currentPath.empty()) {
+        Position nextStep = currentPath.front();
+        currentPath.pop_front();
+
+        // Determine direction based on the next step
+        // This logic assumes that Position has operator- defined, or implement the logic to calculate direction based on position difference
+        Position directionVector = Position((nextStep.x - round(body.front().x + 10 + offSetCorrection.x)),(nextStep.z - round(body.front().z + 10 + offSetCorrection.z)));
+        
+        //debug
+        std::cout << "next step x:" << nextStep.x << ", " << nextStep.z << std::endl;
+        std::cout << "offSetCorrection x:" << offSetCorrection.x << ", " << offSetCorrection.z << std::endl;
+        std::cout << "body front  x:" << body.front().x + 10 + offSetCorrection.x << ", " << body.front().z + 10 + offSetCorrection.z << std::endl;
+        std::cout << "round body front x:" << round(body.front().x + 10 + offSetCorrection.x) << ", " << round(body.front().z + 10 + offSetCorrection.z) << std::endl;
+        std::cout << "Direction Vector x: " << directionVector.x << ", " << directionVector.z << std::endl;
+
+        if (directionVector.x > 0) currentDirection = Direction::RIGHT;
+        else if (directionVector.x < 0) currentDirection = Direction::LEFT;
+        else if (directionVector.z > 0) currentDirection = Direction::DOWN;
+        else if (directionVector.z < 0) currentDirection = Direction::UP;
+
+        //debug
+        std::cout << "UP : 0 , DOWN : 1 , LEFT : 2 , RIGHT : 3\n";
+        std::cout << "Direction: " << static_cast<int>(currentDirection) << std::endl;
+
+        // Move the snake in the determined direction
+        move(currentDirection); // Adjust the move function as needed to use currentDirection
+    }
+}
+
