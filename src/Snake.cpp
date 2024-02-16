@@ -4,7 +4,7 @@
 
 Snake::Snake(Grid& InGrid, Position pos) : grid(InGrid) {
 	// Initialize the snake with a default position
-    body.push_back(pos); // Example: Start at position (0, 0)
+    body.push_back(pos); 
     positionQueues.push_back(std::queue<Position>());
     Position bodypart = pos;
     bodypart.z -= 1;
@@ -15,7 +15,7 @@ Snake::Snake(Grid& InGrid, Position pos) : grid(InGrid) {
 	// Update the grid with the initial snake position
 	grid.setCellContent(0, 0, CellContent::Snake);
 
-    currentDirection = Direction::DOWN; // Example: Start moving up
+    currentDirection = Direction::DOWN; 
 }
 
 void Snake::move(Direction direction) {
@@ -125,27 +125,17 @@ void Snake::followPath() {
         currentPath.pop_front();
 
         // Determine direction based on the next step
-        // This logic assumes that Position has operator- defined, or implement the logic to calculate direction based on position difference
         Position directionVector = Position((nextStep.x - round(body.front().x + 10 + offSetCorrection.x)),(nextStep.z - round(body.front().z + 10 + offSetCorrection.z)));
         
-        //debug
-        std::cout << "next step x:" << nextStep.x << ", " << nextStep.z << std::endl;
-        std::cout << "offSetCorrection x:" << offSetCorrection.x << ", " << offSetCorrection.z << std::endl;
-        std::cout << "body front  x:" << body.front().x + 10 + offSetCorrection.x << ", " << body.front().z + 10 + offSetCorrection.z << std::endl;
-        std::cout << "round body front x:" << round(body.front().x + 10 + offSetCorrection.x) << ", " << round(body.front().z + 10 + offSetCorrection.z) << std::endl;
-        std::cout << "Direction Vector x: " << directionVector.x << ", " << directionVector.z << std::endl;
 
         if (directionVector.x > 0) currentDirection = Direction::RIGHT;
         else if (directionVector.x < 0) currentDirection = Direction::LEFT;
         else if (directionVector.z > 0) currentDirection = Direction::DOWN;
         else if (directionVector.z < 0) currentDirection = Direction::UP;
 
-        //debug
-        std::cout << "UP : 0 , DOWN : 1 , LEFT : 2 , RIGHT : 3\n";
-        std::cout << "Direction: " << static_cast<int>(currentDirection) << std::endl;
 
         // Move the snake in the determined direction
-        move(currentDirection); // Adjust the move function as needed to use currentDirection
+        move(currentDirection); 
     }
 }
 
