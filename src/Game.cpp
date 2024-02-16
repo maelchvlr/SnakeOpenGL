@@ -58,6 +58,9 @@ void Game::init() {
         std::cerr << "Failed to initialize GLEW\n";
         exit(-1); // Exit if GLEW initialization fails
     }
+
+    // enable depth testing
+    glEnable(GL_DEPTH_TEST);
 }
 
 // Loads vertex and fragment shaders, compiles them, and links them into a shader program
@@ -202,7 +205,7 @@ void Game::update() {
 // Render the game
 void Game::render() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set up the view and projection matrices
     glUseProgram(shaderProgram);
@@ -260,19 +263,26 @@ void Game::render() {
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
             if (grid.getCellContent(x, y) == CellContent::Pill) {
-				// Calculate world position with center offset
                 glUniform3f(glGetUniformLocation(shaderProgram, "color"), 0.0f, 0.0f, 1.0f); // Set color to blue for pill
-                glm::vec3 worldPos = glm::vec3(
-					(x - grid.getWidth() / 2.0f) * cellSize + offsetX,
-					offsetY,
-					(y - grid.getHeight() / 2.0f) * cellSize + offsetZ
-				);
 
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
-				glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-				glBindVertexArray(VAO);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}
+                // Calculate world position with center offset
+                glm::vec3 worldPos = glm::vec3(
+                    (x - grid.getWidth() / 2.0f) * cellSize + offsetX,
+                    offsetY,
+                    (y - grid.getHeight() / 2.0f) * cellSize + offsetZ
+                );
+
+                // Render the pill
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
+
+                // Apply scaling transformation to make the pill smaller
+                // Adjust the glm::vec3 values to scale the pill to the desired size
+                model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f)); // Example: scale down to half size
+
+                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+                glBindVertexArray(VAO);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
 			
         }
     }
