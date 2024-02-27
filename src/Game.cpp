@@ -283,6 +283,23 @@ void Game::render() {
                 glBindVertexArray(VAO);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+            if(grid.getCellContent(x,y) == CellContent::Path){
+				glUniform3f(glGetUniformLocation(shaderProgram, "color"), 1.0f, 1.0f, 1.0f); // Set color to cyan for path
+				// Calculate world position with center offset
+				glm::vec3 worldPos = glm::vec3(
+					(x - grid.getWidth() / 2.0f) * cellSize + offsetX,
+					offsetY,
+					(y - grid.getHeight() / 2.0f) * cellSize + offsetZ
+				);
+
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
+
+                model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // Example: scale down to half size
+				glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+				glBindVertexArray(VAO);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+            
 			
         }
     }

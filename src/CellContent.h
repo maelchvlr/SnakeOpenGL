@@ -2,5 +2,6 @@ enum class CellContent {
     Empty,
     Snake,
     Obstacle,
-    Pill
+    Pill,
+    Path
 };

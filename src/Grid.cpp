@@ -131,6 +131,20 @@ std::vector<Grid::Node*> Grid::findPath(const Node& start, const Node& goal) {
                 currentNode = currentNode->parent;
             }
             std::reverse(path.begin(), path.end());
+
+            for (int i = 0; i < getHeight(); i++) {
+                for (int j = 0; j < getWidth(); j++) {
+                    if (getCellContent(j, i) == CellContent::Path) {
+                        setCellContent(j, i, CellContent::Empty);
+                    }
+                }
+            }
+
+            for (auto& node : path) {
+                if (getCellContent(node->x, node->y) != CellContent::Pill) {
+                    setCellContent(node->x, node->y, CellContent::Path);
+                }
+            }
             return path;
         }
 
@@ -151,6 +165,7 @@ std::vector<Grid::Node*> Grid::findPath(const Node& start, const Node& goal) {
             }
         }
     }
+
 
     return {}; // Return empty path if no path is found
 }

@@ -17,6 +17,7 @@ public:
         Node(bool walkable = true, int x = 0, int y = 0) : walkable(walkable), gCost(std::numeric_limits<int>::max()), hCost(0), parent(nullptr), x(x), y(y) {}
 
         int fCost() const { return gCost + hCost; }
+        bool isInPath() const { return walkable && parent != nullptr; }
     };
 
     Grid() = default;
